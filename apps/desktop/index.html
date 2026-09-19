@@ -23,15 +23,11 @@
       font-weight: 300;
       letter-spacing: 0.05em;
     }
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.5rem 0.7rem;
-      font-size: 0.9rem;
-      border-radius: 6px;
-      border: 1px solid #555;
-      background: #2c2c2c;
-      color: #e8e8e8;
+    #path {
+      color: #9a9a9a;
+      font-size: 0.85rem;
+      min-height: 1.2em;
+      word-break: break-all;
     }
     button {
       margin-top: 0.8rem;
@@ -60,9 +56,8 @@
 <body>
   <main>
     <h1>Rebind</h1>
-    <input id="path" type="text" placeholder="/path/to/book.pdf" />
-    <br />
-    <button id="open">Open PDF</button>
+    <button id="open">Open PDF…</button>
+    <div id="path"></div>
     <div id="status"></div>
   </main>
   <script type="module" src="/src/main.js"></script>
