@@ -1,0 +1,12 @@
+[package]
+name = "rebind-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "PDF structure recovery: page-break classification, header/footer detection, and reflowable-text reconstruction, with human-resolvable ambiguity."
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]

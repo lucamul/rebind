@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Rebind</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #1e1e1e;
+      color: #e8e8e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    main {
+      text-align: center;
+    }
+    h1 {
+      font-weight: 300;
+      letter-spacing: 0.05em;
+    }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      border: 1px solid #555;
+      background: #2c2c2c;
+      color: #e8e8e8;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #3a3a3a;
+    }
+    #status {
+      margin-top: 1rem;
+      color: #9a9a9a;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Rebind</h1>
+    <p id="status">core not yet wired up</p>
+    <button id="ping">Ping core</button>
+  </main>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
