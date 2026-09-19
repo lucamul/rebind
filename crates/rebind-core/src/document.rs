@@ -14,7 +14,11 @@ pub type BlockId = u64;
 pub enum Block {
     /// A structural division: front matter, a Part, a Chapter. `level`
     /// mirrors the print hierarchy (1 = Part, 2 = Chapter, ...).
-    Heading { id: BlockId, level: u8, text: String },
+    Heading {
+        id: BlockId,
+        level: u8,
+        text: String,
+    },
     /// Ordinary reflowable prose.
     Paragraph { id: BlockId, spans: Vec<Span> },
     /// A verse/poem line — centered, never reflowed with neighbors.
@@ -47,7 +51,11 @@ pub struct Span {
 
 impl Span {
     pub fn plain(text: impl Into<String>) -> Self {
-        Self { text: text.into(), italic: false, bold: false }
+        Self {
+            text: text.into(),
+            italic: false,
+            bold: false,
+        }
     }
 }
 
@@ -81,8 +89,15 @@ mod tests {
     #[test]
     fn a_document_holds_blocks_in_order() {
         let mut doc = Document::new();
-        doc.push(Block::Heading { id: 1, level: 1, text: "One".into() });
-        doc.push(Block::Paragraph { id: 2, spans: vec![Span::plain("Hello.")] });
+        doc.push(Block::Heading {
+            id: 1,
+            level: 1,
+            text: "One".into(),
+        });
+        doc.push(Block::Paragraph {
+            id: 2,
+            spans: vec![Span::plain("Hello.")],
+        });
 
         assert_eq!(doc.blocks.len(), 2);
         assert_eq!(doc.blocks[0].id(), 1);

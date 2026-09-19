@@ -12,6 +12,8 @@
 
 pub mod conflict;
 pub mod document;
+pub mod ingest;
 
 pub use conflict::{Choice, Conflict, ConflictKind, PageBreakGuess, Resolution};
 pub use document::{Block, BlockId, Document, Span};
+pub use ingest::{IngestError, PdfSource, RawChar, RawPage};

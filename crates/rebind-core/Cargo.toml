@@ -8,5 +8,7 @@ description = "PDF structure recovery: page-break classification, header/footer 
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
+pdfium-render = { version = "0.9", features = ["image_latest", "thread_safe"] }
+thiserror = "2"
 
 [dev-dependencies]

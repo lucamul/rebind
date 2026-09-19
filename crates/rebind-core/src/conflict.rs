@@ -16,12 +16,21 @@ pub enum ConflictKind {
     /// break, or just where justified text ran out of room mid-thought?
     /// This is the single most consequential conflict kind — see the
     /// project README for why it can't be resolved from the PDF alone.
-    PageBreak { before: BlockId, after: BlockId, guess: PageBreakGuess, confidence: f32 },
+    PageBreak {
+        before: BlockId,
+        after: BlockId,
+        guess: PageBreakGuess,
+        confidence: f32,
+    },
 
     /// A line that repeats across many pages at the same position:
     /// running header/footer (strip it) or genuine, repeated body text
     /// (keep it)?
-    RepeatingLine { sample_text: String, seen_on_pages: usize, total_pages: usize },
+    RepeatingLine {
+        sample_text: String,
+        seen_on_pages: usize,
+        total_pages: usize,
+    },
 
     /// A span whose italic/bold status couldn't be read reliably from
     /// font metadata — subsetted/renamed fonts, or glyphs outlined with
@@ -30,11 +39,19 @@ pub enum ConflictKind {
 
     /// A line-end hyphen: rejoin ("exam-ple" -> "example") or keep as a
     /// genuinely hyphenated word ("self-esteem")?
-    Hyphenation { block: BlockId, word_before: String, word_after: String },
+    Hyphenation {
+        block: BlockId,
+        word_before: String,
+        word_after: String,
+    },
 
     /// A block the automatic pass suspects is a heading, with an
     /// uncertain level (Part vs. Chapter vs. a plain emphasized line).
-    HeadingLevel { block: BlockId, text: String, guess: u8 },
+    HeadingLevel {
+        block: BlockId,
+        text: String,
+        guess: u8,
+    },
 }
 
 /// The automatic pass's best guess for a [`ConflictKind::PageBreak`],
@@ -71,7 +88,10 @@ pub enum Choice {
     PageBreak(PageBreakGuess),
     /// `true` = strip as a running header/footer.
     KeepRepeatingLine(bool),
-    Style { italic: bool, bold: bool },
+    Style {
+        italic: bool,
+        bold: bool,
+    },
     /// `true` = rejoin across the hyphen.
     Hyphenation(bool),
     HeadingLevel(u8),
@@ -94,7 +114,9 @@ mod tests {
         };
 
         match c.kind {
-            ConflictKind::PageBreak { confidence, guess, .. } => {
+            ConflictKind::PageBreak {
+                confidence, guess, ..
+            } => {
                 assert!(confidence < 0.5);
                 assert_eq!(guess, PageBreakGuess::Unknown);
             }
@@ -104,7 +126,10 @@ mod tests {
 
     #[test]
     fn a_resolution_references_its_conflict_by_id_not_by_holding_it() {
-        let r = Resolution { conflict_id: 42, choice: Choice::Hyphenation(true) };
+        let r = Resolution {
+            conflict_id: 42,
+            choice: Choice::Hyphenation(true),
+        };
         assert_eq!(r.conflict_id, 42);
     }
 }

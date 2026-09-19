@@ -34,14 +34,35 @@ apps/desktop/           The Tauri app: renders conflicts, takes the
 
 ## Status
 
-Early scaffold. `rebind-core` has the core `Document`/`Conflict` data
-model and nothing else yet — no PDF ingestion. The desktop app is a
-bare Tauri window proving the wiring works end to end.
+Early scaffold, PDF ingestion wired but not yet structure recovery.
+
+`rebind-core` can bind to PDFium and extract every page's text as
+positioned, font-tagged characters (`RawChar`/`RawPage`) — the raw
+material the recovery pass (page-break classification, header/footer
+detection, paragraph reconstruction) will turn into a `Document` full
+of `Conflict`s. That pass doesn't exist yet.
+
+The desktop app can open a PDF by path and show a basic summary (page
+count, first-page size and char count) — proof the whole stack works
+end to end, not a real review UI yet.
+
+## PDFium
+
+Ingestion uses [PDFium](https://pdfium.googlesource.com/pdfium/) (BSD-
+3-Clause) via [pdfium-render](https://github.com/ajrcarey/pdfium-render),
+for real text-layer extraction with position and font data, and later,
+page rendering for the review UI. The prebuilt dynamic library isn't
+committed (~7MB, platform-specific) — fetch it once after cloning:
+
+```
+scripts/fetch-pdfium.sh
+```
 
 ## Developing
 
 ```
 cargo build                          # whole workspace
-cargo test -p rebind-core            # core crate's tests
+cargo test -p rebind-core            # core crate's tests (incl. a
+                                      # real PDF fixture, no mocks)
 cd apps/desktop && cargo tauri dev   # the app, with a live window
 ```

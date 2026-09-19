@@ -16,13 +16,25 @@
     }
     main {
       text-align: center;
+      width: 90%;
+      max-width: 480px;
     }
     h1 {
       font-weight: 300;
       letter-spacing: 0.05em;
     }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      border: 1px solid #555;
+      background: #2c2c2c;
+      color: #e8e8e8;
+    }
     button {
-      margin-top: 1.5rem;
+      margin-top: 0.8rem;
       padding: 0.6rem 1.2rem;
       font-size: 0.95rem;
       border-radius: 6px;
@@ -38,14 +50,20 @@
       margin-top: 1rem;
       color: #9a9a9a;
       min-height: 1.2em;
+      text-align: left;
+      white-space: pre-wrap;
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
     }
   </style>
 </head>
 <body>
   <main>
     <h1>Rebind</h1>
-    <p id="status">core not yet wired up</p>
-    <button id="ping">Ping core</button>
+    <input id="path" type="text" placeholder="/path/to/book.pdf" />
+    <br />
+    <button id="open">Open PDF</button>
+    <div id="status"></div>
   </main>
   <script type="module" src="/src/main.js"></script>
 </body>
