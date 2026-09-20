@@ -14,11 +14,16 @@ const invoke = window.__TAURI__.core.invoke;
 button.addEventListener("click", async () => {
   let selection;
   try {
+    // The command's single struct parameter is named `options`, so
+    // Tauri's arg binding requires it nested under that key — a flat
+    // object here fails with "missing required key options".
     selection = await invoke("plugin:dialog|open", {
-      title: "Open PDF",
-      multiple: false,
-      directory: false,
-      filters: [{ name: "PDF", extensions: ["pdf"] }],
+      options: {
+        title: "Open PDF",
+        multiple: false,
+        directory: false,
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+      },
     });
   } catch (err) {
     status.textContent = `error opening file picker: ${err}`;
