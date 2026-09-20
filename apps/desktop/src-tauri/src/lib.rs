@@ -1,28 +1,55 @@
-use rebind_core::PdfSource;
+use rebind_core::{paragraphs_for_page, PdfSource};
 use serde::Serialize;
 
-/// What the review UI shows immediately after opening a PDF, before any
-/// structure recovery has run — just proof the file loaded and a sense
-/// of its shape.
+/// One recovered paragraph, as the UI shows it — flattened text plus
+/// whatever style is uniform across the whole paragraph. This is the
+/// `layout` module's output made visible; the review UI itself
+/// (conflicts, resolutions) doesn't exist yet.
 #[derive(Debug, Serialize)]
-struct PdfSummary {
+struct ParagraphView {
+    text: String,
+    italic: bool,
+    bold: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct PageView {
+    index: usize,
+    paragraphs: Vec<ParagraphView>,
+}
+
+#[derive(Debug, Serialize)]
+struct PdfInspection {
     page_count: usize,
-    first_page_width: f32,
-    first_page_height: f32,
-    first_page_char_count: usize,
+    pages: Vec<PageView>,
 }
 
 #[tauri::command]
-fn open_pdf(path: String) -> Result<PdfSummary, String> {
+fn open_pdf(path: String) -> Result<PdfInspection, String> {
     let source = PdfSource::bind().map_err(|e| e.to_string())?;
-    let pages = source.load(&path).map_err(|e| e.to_string())?;
-    let first = pages.first().ok_or("PDF has no pages")?;
+    let raw_pages = source.load(&path).map_err(|e| e.to_string())?;
 
-    Ok(PdfSummary {
-        page_count: pages.len(),
-        first_page_width: first.width,
-        first_page_height: first.height,
-        first_page_char_count: first.chars.len(),
+    let pages = raw_pages
+        .iter()
+        .map(|page| {
+            let paragraphs = paragraphs_for_page(page)
+                .into_iter()
+                .map(|p| ParagraphView {
+                    text: p.text(),
+                    italic: !p.lines.is_empty() && p.lines.iter().all(|l| l.is_italic()),
+                    bold: !p.lines.is_empty() && p.lines.iter().all(|l| l.is_bold()),
+                })
+                .collect();
+            PageView {
+                index: page.index,
+                paragraphs,
+            }
+        })
+        .collect();
+
+    Ok(PdfInspection {
+        page_count: raw_pages.len(),
+        pages,
     })
 }
 
