@@ -6,6 +6,7 @@
 
 use pdfium_render::prelude::*;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 #[derive(Debug, thiserror::Error)]
 pub enum IngestError {
@@ -39,25 +40,39 @@ pub struct RawPage {
 }
 
 pub struct PdfSource {
-    pdfium: Pdfium,
+    pdfium: &'static Pdfium,
 }
 
 impl PdfSource {
     /// Binds to the PDFium library. Looks for a vendored copy next to
     /// the workspace first (see `scripts/fetch-pdfium.sh`), then falls
     /// back to whatever's on the system.
+    ///
+    /// The actual bind only ever happens once per process, behind a
+    /// `OnceLock` — every caller (each test in a parallel test binary,
+    /// every command the desktop app handles) shares one `Pdfium`
+    /// instance. `Pdfium` is `Send + Sync` but not `Clone`, and more
+    /// importantly, the native library itself isn't guaranteed to
+    /// tolerate concurrent initialization from multiple threads; doing
+    /// the whole bind inside `get_or_init` — not just caching its
+    /// result — is what actually serializes that, not an afterthought.
     pub fn bind() -> Result<Self, IngestError> {
-        let bindings = Self::vendored_library_path()
-            .and_then(|path| Pdfium::bind_to_library(path).ok())
-            .or_else(|| Pdfium::bind_to_system_library().ok())
-            .ok_or_else(|| {
-                IngestError::PdfiumBinding(
-                    "no PDFium library found (run scripts/fetch-pdfium.sh)".into(),
-                )
-            })?;
-        Ok(Self {
-            pdfium: Pdfium::new(bindings),
-        })
+        static PDFIUM: OnceLock<Result<Pdfium, String>> = OnceLock::new();
+
+        let result = PDFIUM.get_or_init(|| {
+            let bindings = Self::vendored_library_path()
+                .and_then(|path| Pdfium::bind_to_library(path).ok())
+                .or_else(|| Pdfium::bind_to_system_library().ok())
+                .ok_or_else(|| {
+                    "no PDFium library found (run scripts/fetch-pdfium.sh)".to_string()
+                })?;
+            Ok(Pdfium::new(bindings))
+        });
+
+        match result {
+            Ok(pdfium) => Ok(Self { pdfium }),
+            Err(e) => Err(IngestError::PdfiumBinding(e.clone())),
+        }
     }
 
     fn vendored_library_path() -> Option<PathBuf> {
