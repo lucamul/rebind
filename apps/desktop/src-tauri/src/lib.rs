@@ -1,55 +1,91 @@
-use rebind_core::{paragraphs_for_page, PdfSource};
+use rebind_core::{recover, Block, ConflictKind, PageBreakGuess, PdfSource};
 use serde::Serialize;
 
-/// One recovered paragraph, as the UI shows it — flattened text plus
-/// whatever style is uniform across the whole paragraph. This is the
-/// `layout` module's output made visible; the review UI itself
-/// (conflicts, resolutions) doesn't exist yet.
+/// One recovered paragraph, in final reading order — page breaks
+/// already resolved (merged away where confident, left as separate
+/// blocks otherwise). This is `recover()`'s output made visible.
 #[derive(Debug, Serialize)]
-struct ParagraphView {
+struct BlockView {
+    id: u64,
     text: String,
     italic: bool,
     bold: bool,
 }
 
+/// A page-break boundary the recovery pass wasn't confident enough to
+/// resolve silently. No way to actually resolve one from the UI yet —
+/// this is just making the conflict visible, the same way `BlockView`
+/// made paragraph recovery visible before it.
 #[derive(Debug, Serialize)]
-struct PageView {
-    index: usize,
-    paragraphs: Vec<ParagraphView>,
+struct ConflictView {
+    id: u64,
+    guess: String,
+    confidence: f32,
+    before_block: u64,
+    after_block: u64,
 }
 
 #[derive(Debug, Serialize)]
 struct PdfInspection {
     page_count: usize,
-    pages: Vec<PageView>,
+    blocks: Vec<BlockView>,
+    conflicts: Vec<ConflictView>,
 }
 
 #[tauri::command]
 fn open_pdf(path: String) -> Result<PdfInspection, String> {
     let source = PdfSource::bind().map_err(|e| e.to_string())?;
     let raw_pages = source.load(&path).map_err(|e| e.to_string())?;
+    let page_count = raw_pages.len();
 
-    let pages = raw_pages
+    let recovered = recover(&raw_pages);
+
+    let blocks = recovered
+        .document
+        .blocks
         .iter()
-        .map(|page| {
-            let paragraphs = paragraphs_for_page(page)
-                .into_iter()
-                .map(|p| ParagraphView {
-                    text: p.text(),
-                    italic: !p.lines.is_empty() && p.lines.iter().all(|l| l.is_italic()),
-                    bold: !p.lines.is_empty() && p.lines.iter().all(|l| l.is_bold()),
-                })
-                .collect();
-            PageView {
-                index: page.index,
-                paragraphs,
-            }
+        .filter_map(|b| match b {
+            Block::Paragraph { id, spans } => Some(BlockView {
+                id: *id,
+                text: spans[0].text.clone(),
+                italic: spans[0].italic,
+                bold: spans[0].bold,
+            }),
+            // recover() doesn't produce any other Block variant yet.
+            _ => None,
+        })
+        .collect();
+
+    let conflicts = recovered
+        .conflicts
+        .iter()
+        .filter_map(|c| match c.kind {
+            ConflictKind::PageBreak {
+                before,
+                after,
+                guess,
+                confidence,
+            } => Some(ConflictView {
+                id: c.id,
+                guess: match guess {
+                    PageBreakGuess::Continues => "continues",
+                    PageBreakGuess::NewSection => "new_section",
+                    PageBreakGuess::Unknown => "unknown",
+                }
+                .to_string(),
+                confidence,
+                before_block: before,
+                after_block: after,
+            }),
+            // recover() only ever produces PageBreak conflicts today.
+            _ => None,
         })
         .collect();
 
     Ok(PdfInspection {
-        page_count: raw_pages.len(),
-        pages,
+        page_count,
+        blocks,
+        conflicts,
     })
 }
 

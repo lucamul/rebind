@@ -14,8 +14,10 @@ pub mod conflict;
 pub mod document;
 pub mod ingest;
 pub mod layout;
+pub mod recover;
 
 pub use conflict::{Choice, Conflict, ConflictKind, PageBreakGuess, Resolution};
 pub use document::{Block, BlockId, Document, Span};
 pub use ingest::{IngestError, PdfSource, RawChar, RawPage};
 pub use layout::{lines_for_page, paragraphs_for_page, Line, Paragraph};
+pub use recover::{recover, Recovered};

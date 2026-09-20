@@ -11,34 +11,49 @@ const button = document.getElementById("open");
 
 const invoke = window.__TAURI__.core.invoke;
 
-function renderPages(inspection) {
+const GUESS_LABEL = {
+  continues: "leans: continues",
+  new_section: "leans: new section",
+  unknown: "no clear lean",
+};
+
+function conflictMarker(conflict) {
+  const el = document.createElement("div");
+  el.className = "conflict";
+  const pct = Math.round(conflict.confidence * 100);
+  el.textContent = `⚠ page break uncertain here — ${GUESS_LABEL[conflict.guess]} (${pct}% confidence)`;
+  return el;
+}
+
+function render(inspection) {
   pagesEl.innerHTML = "";
-  for (const page of inspection.pages) {
-    const pageEl = document.createElement("section");
-    pageEl.className = "page";
 
-    const label = document.createElement("div");
-    label.className = "page-label";
-    label.textContent = `Page ${page.index + 1} of ${inspection.page_count}`;
-    pageEl.appendChild(label);
+  const conflictsAfter = new Map(); // block id -> conflict, for the block right before the boundary
+  for (const c of inspection.conflicts) {
+    conflictsAfter.set(c.before_block, c);
+  }
 
-    if (page.paragraphs.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "empty-page";
-      empty.textContent = "(no extractable text — likely an image-only page)";
-      pageEl.appendChild(empty);
+  const summary = document.createElement("div");
+  summary.className = "summary";
+  const conflictCount = inspection.conflicts.length;
+  summary.textContent =
+    conflictCount === 0
+      ? `${inspection.page_count} pages, ${inspection.blocks.length} paragraphs recovered — no uncertain page breaks`
+      : `${inspection.page_count} pages, ${inspection.blocks.length} paragraphs recovered — ${conflictCount} page break${conflictCount === 1 ? "" : "s"} need review`;
+  pagesEl.appendChild(summary);
+
+  for (const block of inspection.blocks) {
+    const p = document.createElement("p");
+    p.className = "paragraph";
+    if (block.italic) p.classList.add("italic");
+    if (block.bold) p.classList.add("bold");
+    p.textContent = block.text;
+    pagesEl.appendChild(p);
+
+    const conflict = conflictsAfter.get(block.id);
+    if (conflict) {
+      pagesEl.appendChild(conflictMarker(conflict));
     }
-
-    for (const para of page.paragraphs) {
-      const p = document.createElement("p");
-      p.className = "paragraph";
-      if (para.italic) p.classList.add("italic");
-      if (para.bold) p.classList.add("bold");
-      p.textContent = para.text;
-      pageEl.appendChild(p);
-    }
-
-    pagesEl.appendChild(pageEl);
   }
 }
 
@@ -71,7 +86,7 @@ button.addEventListener("click", async () => {
   try {
     const inspection = await invoke("open_pdf", { path });
     status.textContent = "";
-    renderPages(inspection);
+    render(inspection);
   } catch (err) {
     status.textContent = `error: ${err}`;
   }
